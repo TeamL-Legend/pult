@@ -86,16 +86,20 @@
             sendAction('move', { dx, dy });
         });
 
-        function sendAction(action, params = {}) {
-            fetch(SERVER_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, ...params })
-            }).catch(e => console.error("Ошибка API"));
-            
-            if (action.includes('click')) tg.HapticFeedback.impactOccurred('medium');
-        }
+function sendAction(action, params = {}) {
+    fetch(SERVER_URL, {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-Pinggy-No-Screen': 'true' // Добавь эту строку!
+        },
+        body: JSON.stringify({ action, ...params })
+    }).catch(e => console.error("Ошибка API"));
+    
+    if (action.includes('click')) tg.HapticFeedback.impactOccurred('medium');
+}
     </script>
 </body>
 
 </html>
+
