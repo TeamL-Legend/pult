@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Touchpad Remote</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root { --primary: #6366f1; --bg: #0f172a; }
+        body {
+            background: var(--bg);
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column; align-items: center;
+            height: 100vh; overflow: hidden;
+        }
+        .header { margin: 20px 0; text-align: center; }
+        .touchpad {
+            width: 92%; height: 55%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            touch-action: none; position: relative;
+            backdrop-filter: blur(10px);
+        }
+        .touchpad::after {
+            content: "ТАЧПАД"; opacity: 0.1; font-size: 2rem; font-weight: 800;
+        }
+        .controls {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 15px; width: 92%; margin-top: 25px;
+        }
+        .btn {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid var(--primary);
+            padding: 20px; border-radius: 20px;
+            color: white; font-weight: bold; font-size: 1rem;
+            transition: 0.2s; text-align: center;
+            backdrop-filter: blur(5px);
+        }
+        .btn:active { background: var(--primary); transform: scale(0.95); }
+        .status { margin-top: auto; margin-bottom: 20px; font-size: 0.8rem; color: #64748b; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2 style="margin:0">PC Control</h2>
+        <span style="font-size: 0.8rem; color: #818cf8;">Управляйте курсором в реальном времени</span>
+    </div>
+
+    <div class="touchpad" id="area"></div>
+
+    <div class="controls">
+        <div class="btn" onclick="sendAction('left_click')">L-Click</div>
+        <div class="btn" onclick="sendAction('right_click')">R-Click</div>
+    </div>
+
+    <p class="status">Connected via Flask API</p>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+
+        // ВАЖНО: Замени на адрес, который выдаст Ngrok (например, https://xxxx.ngrok-free.app)
+        const SERVER_URL = "http://ТВОЙ_АЙПИ_ИЛИ_NGROK:5000/mouse";
+
+        const area = document.getElementById('area');
+        let lastX = 0, lastY = 0;
+
+        area.addEventListener('touchstart', e => {
+            lastX = e.touches[0].clientX;
+            lastY = e.touches[0].clientY;
+            tg.HapticFeedback.impactOccurred('light');
+        });
+
+        area.addEventListener('touchmove', e => {
+            const dx = e.touches[0].clientX - lastX;
+            const dy = e.touches[0].clientY - lastY;
+            lastX = e.touches[0].clientX;
+            lastY = e.touches[0].clientY;
+
+            sendAction('move', { dx, dy });
+        });
+
+        function sendAction(action, params = {}) {
+            fetch(SERVER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, ...params })
+            }).catch(e => console.error("Ошибка API"));
+            
+            if (action.includes('click')) tg.HapticFeedback.impactOccurred('medium');
+        }
+    </script>
+</body>
+</html>
